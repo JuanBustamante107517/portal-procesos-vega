@@ -1,0 +1,22 @@
+# Entornos virtuales y caché de Python
+backend/venv/
+backend/**/__pycache__/
+backend/*.pyc
+
+# Base de datos local
+backend/db.sqlite3*
+
+# Dependencias de Node.js (¡Muy grande!)
+frontend/node_modules/
+
+# Archivos de build del frontend
+frontend/dist/
+frontend/.vite/
+
+# Archivos del sistema operativo y editores
+.DS_Store
+*.env
+*.env.*
+!.env.example
+*.log
+.vscode/
