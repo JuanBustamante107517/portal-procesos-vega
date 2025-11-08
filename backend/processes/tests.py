@@ -5,6 +5,11 @@ from rest_framework.test import APIRequestFactory
 # ¡Importamos Request de DRF!
 from rest_framework.request import Request
 from .views import ProcesoViewSet
+# --- ¡AÑADE ESTOS IMPORTS NUEVOS! ---
+from django.contrib.auth.models import User
+from users.models import Profile
+from django.urls import reverse
+from rest_framework_simplejwt.tokens import RefreshToken
 
 # --- Prueba U-B-003 ---
 @pytest.mark.django_db
@@ -94,3 +99,135 @@ def test_proceso_viewset_get_queryset_with_filter():
     assert proceso_b2b_2 in queryset
     # Verificamos el orden por título
     assert queryset.first() == proceso_b2b_2 # 'Campañas B2B' va antes que 'Licitaciones'
+
+
+# ... (mis 3 pruebas unitarias U-B-003, 005, 006)...
+
+# --- ¡NUEVA PRUEBA DE INTEGRACIÓN I-003! ---
+@pytest.mark.django_db
+def test_integration_I003_authorized_data_access(client):
+    """
+    PRUEBA DE INTEGRACIÓN I-003: Acceso Autorizado a Datos Protegidos.
+    Verifica que un usuario logueado pueda ver la lista de procesos.
+    """
+    # 1. Arrange: 
+    #    Creamos el usuario 'admin' y le asignamos su rol.
+    user = User.objects.create_user(username='admin', password='CHOcho2002')
+    profile = Profile.objects.get(user=user)
+    profile.role = 'ADMIN'
+    profile.save()
+
+    # Creamos los datos que queremos obtener (los procesos B2B)
+    Proceso.objects.create(titulo='Licitaciones', tipo_venta='B2B')
+    Proceso.objects.create(titulo='Campañas B2B', tipo_venta='B2B')
+    # Y un dato que NO queremos obtener
+    Proceso.objects.create(titulo='E-commerce', tipo_venta='B2C')
+
+    # Obtenemos un token de acceso para este usuario
+    refresh = RefreshToken.for_user(user)
+    token = str(refresh.access_token)
+
+    # Obtenemos la URL de la API (usando el 'basename' que definimos)
+    # Esto genera la URL: /api/processes/
+    url = reverse('proceso-list') 
+    # ¡Añadimos el filtro que queremos probar!
+    url_con_filtro = f"{url}?tipo_venta=B2B" 
+
+    # 2. Act: 
+    #    Usamos el 'client' para simular un GET, pero esta vez
+    #    pasamos la cabecera de autorización con el token.
+    response = client.get(
+        url_con_filtro, 
+        HTTP_AUTHORIZATION=f'Bearer {token}'
+    )
+
+    # 3. Assert: 
+    #    Verificamos que el Backend nos dio los datos.
+
+    # 3.1: ¿El código de estado fue 200 OK?
+    assert response.status_code == 200
+
+    # 3.2: ¿La respuesta contiene 2 resultados (solo los B2B)?
+    assert len(response.data) == 2
+
+    # 3.3: ¿Los títulos son los correctos?
+    titulos_obtenidos = {proceso['titulo'] for proceso in response.data}
+    assert titulos_obtenidos == {'Licitaciones', 'Campañas B2B'}
+
+# --- ¡NUEVA PRUEBA DE INTEGRACIÓN I-004! ---
+@pytest.mark.django_db
+def test_integration_I004_unauthorized_no_token(client):
+    """
+    PRUEBA DE INTEGRACIÓN I-004: Acceso Denegado Sin Token.
+    Verifica que la API /api/processes/ rechace a un usuario sin token.
+    """
+    # 1. Arrange: 
+    #    Obtenemos la URL de la API. No necesitamos crear datos ni
+    #    usuarios, solo queremos probar el acceso a la puerta.
+    url = reverse('proceso-list') # URL: /api/processes/
+    url_con_filtro = f"{url}?tipo_venta=B2B"
+
+    # 2. Act: 
+    #    Simulamos un GET, pero esta vez NO pasamos la cabecera
+    #    HTTP_AUTHORIZATION. Estamos "tocando la puerta" sin token.
+    response = client.get(url_con_filtro)
+
+    # 3. Assert: 
+    #    Verificamos que el Backend nos rechazó con 401.
+
+    # 3.1: ¿El código de estado fue 401 Unauthorized?
+    assert response.status_code == 401
+
+# --- ¡NUEVA PRUEBA DE INTEGRACIÓN I-005! ---
+@pytest.mark.django_db
+def test_integration_I005_forbidden_insufficient_role(client):
+    """
+    PRUEBA DE INTEGRACIÓN I-005: Acceso Denegado por Rol Insuficiente.
+    Verifica que la API rechace a un usuario con rol 'CAJERO'.
+    """
+    # 1. Arrange: 
+    #    Creamos un usuario 'cajero' y le asignamos su rol.
+    user = User.objects.create_user(username='test_cajero', password='password123')
+    profile = Profile.objects.get(user=user)
+    profile.role = 'CAJERO' # ¡Rol insuficiente!
+    profile.save()
+
+    # Obtenemos un token de acceso para este cajero
+    refresh = RefreshToken.for_user(user)
+    token = str(refresh.access_token)
+
+    # Obtenemos la URL de la API
+    url = reverse('proceso-list') # URL: /api/processes/
+    url_con_filtro = f"{url}?tipo_venta=B2B"
+
+    # 2. Act: 
+    #    Simulamos un GET con el token del CAJERO.
+    response = client.get(
+        url_con_filtro, 
+        HTTP_AUTHORIZATION=f'Bearer {token}'
+    )
+
+    # 3. Assert: 
+    #    Verificamos que el Backend nos rechazó con 403 Forbidden.
+
+    # 3.1: ¿El código de estado fue 403 Forbidden?
+    assert response.status_code == 403
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

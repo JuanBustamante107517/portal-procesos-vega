@@ -2,6 +2,7 @@
 from rest_framework import viewsets, permissions # <-- Asegúrate que 'permissions' esté importado
 from .models import Proceso
 from .serializers import ProcesoSerializer
+from users.permissions import IsAdminOrJefe
 
 class ProcesoViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -12,7 +13,7 @@ class ProcesoViewSet(viewsets.ReadOnlyModelViewSet):
 
     # --- ¡ESTA LÍNEA ES LA CLAVE! ---
     # Debe decir EXACTAMENTE: permissions.IsAuthenticated
-    permission_classes = [permissions.IsAuthenticated] 
+    permission_classes = [IsAdminOrJefe] # <-- ¡USA NUESTRA REGLA!
 
     def get_queryset(self):
         queryset = Proceso.objects.all()
