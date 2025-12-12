@@ -1,0 +1,11 @@
+# Ignorar carpetas pesadas e innecesarias
+**/node_modules
+**/venv
+**/.git
+**/.gitignore
+**/__pycache__
+**/*.pyc
+**/dist
+**/build
+infra/
+docs/

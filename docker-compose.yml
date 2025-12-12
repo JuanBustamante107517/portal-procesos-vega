@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  # --- SERVICIO BACKEND (Django) ---
+  backend:
+    build: ./backend
+    container_name: vega-backend
+    ports:
+      - "8001:8000" # Mapeamos puerto 8001 de tu PC al 8000 del contenedor
+    volumes:
+      - ./backend:/app # ¡Truco! Sincroniza tu código en vivo para no reconstruir siempre
+    environment:
+      - DEBUG=1
+    command: python manage.py runserver 0.0.0.0:8000
+
+  # --- SERVICIO FRONTEND (React + Nginx) ---
+  frontend:
+    build: ./frontend
+    container_name: vega-frontend
+    ports:
+      - "5173:80" # Mapeamos el puerto 5173 de tu PC al 80 (Nginx) del contenedor
+    depends_on:
+      - backend # Espera a que el backend exista antes de iniciar
