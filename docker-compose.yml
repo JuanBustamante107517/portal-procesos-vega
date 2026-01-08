@@ -1,23 +1,48 @@
 version: '3.8'
 
 services:
-  # --- SERVICIO BACKEND (Django) ---
+  # --- 1. BASE DE DATOS (PostgreSQL) ---
+  db:
+    image: postgres:15
+    container_name: vega-db
+    environment:
+      POSTGRES_DB: vega_db
+      POSTGRES_USER: vega_user
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # --- 2. BACKEND (Django) ---
   backend:
     build: ./backend
     container_name: vega-backend
     ports:
-      - "8001:8000" # Mapeamos puerto 8001 de tu PC al 8000 del contenedor
+      - "8001:8000"
     volumes:
-      - ./backend:/app # ¡Truco! Sincroniza tu código en vivo para no reconstruir siempre
+      - ./backend:/app
     environment:
       - DEBUG=1
-    command: python manage.py runserver 0.0.0.0:8000
+      - DB_NAME=vega_db
+      - DB_USER=vega_user
+      - DB_PASSWORD=password123
+      - DB_HOST=db
+      - DB_PORT=5432
+    depends_on:
+      - db
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
 
-  # --- SERVICIO FRONTEND (React + Nginx) ---
+  # --- 3. FRONTEND (React) ---
   frontend:
     build: ./frontend
     container_name: vega-frontend
     ports:
-      - "5173:80" # Mapeamos el puerto 5173 de tu PC al 80 (Nginx) del contenedor
+      - "5173:80"
     depends_on:
-      - backend # Espera a que el backend exista antes de iniciar
+      - backend
+
+volumes:
+  postgres_data:
