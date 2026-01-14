@@ -2,9 +2,9 @@
 import { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode'; // ¡Ups! Nos faltó esta, la instalamos en el sig. paso
+import { API_URL } from '../config';
 
-// Creamos la URL base de nuestra API
-const API_URL = 'http://127.0.0.1:8001'; // Usaremos el puerto 8000 por defecto
+// Ahora API_URL se importa desde config.js de manera global
 
 const AuthContext = createContext();
 

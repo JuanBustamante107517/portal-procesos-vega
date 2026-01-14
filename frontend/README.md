@@ -2,6 +2,24 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+## Configuración de la API
+
+La URL de la API se gestiona de manera global a través del archivo `src/config.js`. 
+
+Por defecto, la aplicación usa `http://127.0.0.1:8001`. Para cambiar la URL:
+
+1. Crea un archivo `.env` en la raíz del directorio `frontend` (puedes copiar `.env.example`)
+2. Define la variable `VITE_API_URL`:
+   ```
+   VITE_API_URL=http://tu-servidor.com:8000
+   ```
+3. Reinicia el servidor de desarrollo
+
+Todos los componentes que necesiten hacer llamadas a la API deben importar:
+```javascript
+import { API_URL } from '../config';
+```
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh

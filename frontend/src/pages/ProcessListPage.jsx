@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import { API_URL } from '../config';
 
 // --- Estilos Manuales (El método a prueba de fallos) ---
 const styles = {
@@ -87,23 +88,17 @@ function ProcessListPage() {
       setError(null);
 
       try {
-        // --- ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
-        // Aseguramos que la cabecera Authorization tenga el formato
-        // EXACTO: "Bearer <espacio> <token>"
-        // REEMPLAZAR DESDE AQUÍ
-        const token = localStorage.getItem('access'); // Recuperamos el token guardado
+        // Obtenemos el token de acceso desde authTokens
+        const token = authTokens.access;
 
         const response = await axios.get(
-          // CAMBIO 1: Poner la IP pública de AWS, no localhost
-          `http://44.203.244.176:8001/api/processes/?tipo_venta=${tipoVenta.toUpperCase()}`,
+          `${API_URL}/api/processes/?tipo_venta=${tipoVenta.toUpperCase()}`,
           {
-            // CAMBIO 2: Agregar los headers para que no salga 401
             headers: {
               'Authorization': `Bearer ${token}`
             }
           }
         );
-        // HASTA AQUÍ
 
         setProcesos(response.data);
       } catch (err) {
