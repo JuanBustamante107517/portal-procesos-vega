@@ -6,37 +6,37 @@ import axios from 'axios';
 
 // --- Estilos Manuales (El método a prueba de fallos) ---
 const styles = {
-  page: { 
-    minHeight: '100vh', 
+  page: {
+    minHeight: '100vh',
     backgroundColor: '#991b1b', // Fondo Rojo
-    padding: '24px', 
-    color: 'white', 
-    fontFamily: 'system-ui, sans-serif' 
+    padding: '24px',
+    color: 'white',
+    fontFamily: 'system-ui, sans-serif'
   },
-  header: { 
-    display: 'flex', 
-    alignItems: 'center', 
-    marginBottom: '32px' 
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    marginBottom: '32px'
   },
-  backButton: { 
+  backButton: {
     padding: '8px 12px', // Ligeramente más grande
-    marginRight: '16px', 
-    backgroundColor: 'rgba(255, 255, 255, 0.1)', 
-    border: 'none', 
-    borderRadius: '50%', 
-    color: 'white', 
+    marginRight: '16px',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    border: 'none',
+    borderRadius: '50%',
+    color: 'white',
     cursor: 'pointer',
     fontSize: '24px', // Flecha más grande
     lineHeight: '1'
   },
-  headerTitle: { 
-    fontSize: '30px', 
-    fontWeight: 'bold' 
+  headerTitle: {
+    fontSize: '30px',
+    fontWeight: 'bold'
   },
-  loadingText: { 
-    textAlign: 'center', 
-    fontSize: '18px', 
-    marginTop: '40px' 
+  loadingText: {
+    textAlign: 'center',
+    fontSize: '18px',
+    marginTop: '40px'
   },
   // Estilo para las tarjetas de Proceso (Licitación, etc.)
   card: {
@@ -49,11 +49,11 @@ const styles = {
     color: '#1e293b',
     marginBottom: '16px', // Espacio entre tarjetas
   },
-  cardTitle: { 
-    fontSize: '20px', 
-    fontWeight: 'bold', 
-    color: '#1d4ed8', 
-    marginBottom: '8px' 
+  cardTitle: {
+    fontSize: '20px',
+    fontWeight: 'bold',
+    color: '#1d4ed8',
+    marginBottom: '8px'
   },
   cardDescription: {
     fontSize: '16px',
@@ -67,20 +67,20 @@ function ProcessListPage() {
   const navigate = useNavigate();
   const { authTokens } = useAuth();
   const { tipoVenta } = useParams(); // 'b2b' o 'b2c'
-  
+
   const [procesos, setProcesos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const pageTitle = tipoVenta.toUpperCase() === 'B2B' ? 'Ventas B2B' : 'Ventas B2C';
 
-useEffect(() => {
+  useEffect(() => {
     const fetchProcesos = async () => {
       // --- Verificación previa ---
       if (!authTokens || !authTokens.access) {
         setError("No estás autenticado. Por favor, inicia sesión.");
         setLoading(false);
-        return; 
+        return;
       }
 
       setLoading(true);
@@ -90,25 +90,28 @@ useEffect(() => {
         // --- ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
         // Aseguramos que la cabecera Authorization tenga el formato
         // EXACTO: "Bearer <espacio> <token>"
+        // REEMPLAZAR DESDE AQUÍ
+        const token = localStorage.getItem('access'); // Recuperamos el token guardado
+
         const response = await axios.get(
-          `http://127.0.0.1:8001/api/processes/?tipo_venta=${tipoVenta.toUpperCase()}`,
+          // CAMBIO 1: Poner la IP pública de AWS, no localhost
+          `http://44.203.244.176:8001/api/processes/?tipo_venta=${tipoVenta.toUpperCase()}`,
           {
+            // CAMBIO 2: Agregar los headers para que no salga 401
             headers: {
-              // Antes: 'Authorization': `Bearer ${authTokens.access}` 
-              // Ahora, nos aseguramos del espacio:
-              'Authorization': `Bearer ${authTokens.access}` 
+              'Authorization': `Bearer ${token}`
             }
           }
         );
-        // --- FIN DE LA CORRECCIÓN ---
+        // HASTA AQUÍ
 
         setProcesos(response.data);
       } catch (err) {
         console.error("Error al cargar procesos:", err.response || err.message); // Log más detallado
         if (err.response && err.response.status === 403) {
-             setError('Error 403: No tienes permiso para ver estos procesos.');
+          setError('Error 403: No tienes permiso para ver estos procesos.');
         } else {
-             setError('No se pudieron cargar los procesos. Revisa la consola.');
+          setError('No se pudieron cargar los procesos. Revisa la consola.');
         }
       } finally {
         setLoading(false);
@@ -121,7 +124,7 @@ useEffect(() => {
 
   return (
     <div style={styles.page}>
-      
+
       <header style={styles.header}>
         <button onClick={() => navigate(-1)} style={styles.backButton} title="Volver">
           &#8592;
@@ -132,19 +135,19 @@ useEffect(() => {
       <section>
         {loading && <p style={styles.loadingText}>Cargando procesos...</p>}
         {error && <p style={styles.loadingText}>{error}</p>}
-        
+
         {!loading && !error && (
           <div style={{ maxWidth: '800px', margin: '0 auto' }}>
             {procesos.length > 0 ? (
               procesos.map((proceso) => (
-                <Link 
+                <Link
                   to={`/process-detail/${proceso.id}`} // Enlazamos a la "Página 5"
-                  key={proceso.id} 
+                  key={proceso.id}
                   style={styles.card}
                 >
                   <h3 style={styles.cardTitle}>{proceso.titulo}</h3>
                   {/* ¡USAMOS LA DESCRIPCIÓN CON EMPEÑO! */}
-                  <p style={styles.cardDescription}>{proceso.descripcion}</p> 
+                  <p style={styles.cardDescription}>{proceso.descripcion}</p>
                 </Link>
               ))
             ) : (
